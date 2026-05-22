@@ -1,0 +1,17 @@
+Feature,Importance
+distance_peak,0.7977401
+distance,0.07230408
+distance_traffic,0.06086663
+is_peak,0.037950747
+demand_score,0.016563345
+weather_peak,0.0072200275
+weather_encoded,0.0049626078
+hour_sin,0.00071102707
+traffic_peak,0.0006614147
+hour,0.00050229824
+hour_cos,0.00023636752
+traffic_encoded,0.00015838414
+is_night,0.00012296728
+distance_bucket,0.0
+distance_squared,0.0
+distance_log,0.0
