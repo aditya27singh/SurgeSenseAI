@@ -77,7 +77,7 @@ Uses engineered features and XGBoost regression to model dynamic pricing behavio
 │
 ├── 📂 backend                # FastAPI backend
 │
-├── 📂 frontend                 # React + Vite frontend
+├── 📂 frontend               # React + Vite frontend
 │
 ├── 📂 data                    
 │
@@ -85,7 +85,7 @@ Uses engineered features and XGBoost regression to model dynamic pricing behavio
 │
 ├── 📂 outputs
 │
-├── 📜 requirements.txt         # Python dependencies
+├── 📜 requirements.txt       # Python dependencies
 ├── 📜 .gitignore
 └── 📜 README.md
 ```
