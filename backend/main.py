@@ -46,6 +46,10 @@ app = FastAPI(
     version = "1.0."
 )
 
+@app.get("/")
+def home():
+    return {"message": "SurgeSense AI API is running."}
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -55,7 +59,6 @@ app.add_middleware(
 )
 
 print("FastAPI App Initialized")
-
 
 # SQLite Database Setup
 
