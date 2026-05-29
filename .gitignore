@@ -16,3 +16,8 @@ __pycache__/
 # System files
 .DS_Store
 
+# Database file
+rides.db
+
+# Frontend env
+frontend/.env

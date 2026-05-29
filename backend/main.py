@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+import sqlite3
+from datetime import datetime
 from pydantic import BaseModel
 import pandas as pd
 import numpy as np
@@ -7,6 +9,7 @@ import requests
 import joblib
 import os
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
 
 # Load ENV variables
@@ -20,7 +23,19 @@ print("Weather API Key Loaded:", weather_api_key is not None)
 print("OpenRouteService API Key Loaded:", ors_api_key is not None)
 
 # Load Trained Model
-model = joblib.load("outputs/saved_models/xgboost_model.pkl")
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
+MODEL_PATH = os.path.join(
+    BASE_DIR,
+    "..",
+    "outputs",
+    "saved_models",
+    "xgboost_model.pkl"
+)
+
+model = joblib.load(MODEL_PATH)
 print("Model Loaded Successfully")
 
 # Create FastAPI app
@@ -31,7 +46,56 @@ app = FastAPI(
     version = "1.0."
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
 print("FastAPI App Initialized")
+
+
+# SQLite Database Setup
+
+DB_PATH = os.path.join(
+    BASE_DIR,
+    "..",
+    "rides.db"
+)
+
+conn = sqlite3.connect(
+    DB_PATH,
+    check_same_thread=False
+)
+
+cursor = conn.cursor()
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS rides (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    pickup TEXT,
+    drop_location TEXT,
+    city TEXT,
+
+    predicted_fare REAL,
+
+    distance_km REAL,
+    duration_minutes REAL,
+
+    traffic TEXT,
+    weather TEXT,
+
+    timestamp TEXT
+)
+""")
+
+conn.commit()
+
+print("Ride History Database Ready")
 
 # Request Schema
 
@@ -103,6 +167,9 @@ def get_route_info(start_location, end_location):
     )
 
     start_data = start_response.json()
+    if not start_data.get("features"):
+        raise ValueError(f"Could not geocode start location: {start_location}")
+    
 
     # End location
     end_response = requests.get(
@@ -112,6 +179,8 @@ def get_route_info(start_location, end_location):
     )
 
     end_data = end_response.json()
+    if not end_data.get("features"):
+        raise ValueError(f"Could not geocode end location: {end_location}")
 
     # Extract coordinates
     start_coords = (
@@ -261,15 +330,17 @@ def predict_fare(start_location, end_location, city, hour):
 
     # Get route and traffic info
     route_info = get_route_info(start_location, end_location)
-    distance=route_info["distance_km"]
-    traffic=route_info["traffic"]
-    geometry=route_info["geometry"]
-    duration_minutes=route_info["duration_minutes"]
 
-    # Get weather info (using start location city for simplicity)
+    distance = route_info["distance_km"]
+    traffic = route_info["traffic"]
+    geometry = route_info["geometry"]
+    duration_minutes = route_info["duration_minutes"]
+
+    # Get weather info
     weather_info = get_weather(city)
-    temperature=weather_info["temperature"]
-    weather=weather_info["weather"]
+
+    temperature = weather_info["temperature"]
+    weather = weather_info["weather"]
 
     # Create features
     features = create_features(
@@ -279,33 +350,173 @@ def predict_fare(start_location, end_location, city, hour):
         weather=weather
     )
 
-    # Predict fare
+    # Predict fare using ML model
     predicted_fare = model.predict(features)[0]
 
+    # AI Fare Breakdown Logic
+
+    # Base pricing
+    base_fare = 40
+    distance_fare = distance * 12
+    base_total= base_fare + distance_fare
+
+    # Traffic surge
+    traffic_surge = {
+        "low": 20,
+        "medium": 50,
+        "high": 90
+    }[traffic]
+
+    # Weather surge
+    weather_surge = {
+        "clear": 0,
+        "rain": 35,
+        "snow": 60
+    }[weather]
+
+    # Peak hour surge
+    if 7 <= hour <= 10 or 17 <= hour <= 21:
+        peak_hour_surge = 70
+    else:
+        peak_hour_surge = 0
+
+    # Total Calculated Fare
+    calculated_fare=(
+        base_total +
+        traffic_surge +
+        weather_surge +
+        peak_hour_surge
+    )
+
+    # Blend ML prediction and rule-based calculation
+
+    if distance < 50:
+        predicted_fare = (
+        calculated_fare * 0.4 +
+        predicted_fare * 0.6
+    )
+    else:
+        predicted_fare = calculated_fare
+
+    predicted_fare = (
+        calculated_fare*0.7 + predicted_fare*0.3
+    )
+
+    
+    # Save Ride History
+
+
+    cursor.execute("""
+    INSERT INTO rides (
+        pickup,
+        drop_location,
+        city,
+
+        predicted_fare,
+
+        distance_km,
+        duration_minutes,
+
+        traffic,
+        weather,
+
+        timestamp
+
+    )
+
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+
+        start_location,
+        end_location,
+        city,
+
+        float(round(predicted_fare, 2)),
+
+        float(round(distance, 2)),
+        float(round(duration_minutes, 2)),
+
+        traffic,
+        weather,
+
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ))
+
+    conn.commit()
+
     return {
+
+        # Main prediction
         "predicted_fare": float(round(predicted_fare, 2)),
+
+        # Ride info
         "distance_km": float(round(distance, 2)),
         "estimated_duration_minutes": float(round(duration_minutes, 2)),
         "traffic": traffic,
         "weather": weather,
-        "geometry": geometry,
-        "temperature": round(temperature, 1)
-    }
+        "temperature": round(temperature, 1),
 
+        # Map geometry
+        "geometry": geometry,
+
+        # AI Fare Breakdown
+        "base_fare": float(round(base_total, 2)),
+        "traffic_surge": float(traffic_surge),
+        "weather_surge": float(weather_surge),
+        "peak_hour_surge": float(peak_hour_surge)
+    }
 # Prediction Endpoint
 
-@app.post("/predict")
 
+@app.get("/ride-history")
+def ride_history():
+
+    cursor.execute("""
+    SELECT
+        pickup,
+        drop_location,
+        predicted_fare,
+        traffic,
+        weather,
+        timestamp
+    FROM rides
+    ORDER BY id DESC
+    LIMIT 5
+    """)
+
+    rides = cursor.fetchall()
+
+    history = []
+
+    for ride in rides:
+
+        history.append({
+
+            "pickup": ride[0],
+            "drop": ride[1],
+            "fare": ride[2],
+            "traffic": ride[3],
+            "weather": ride[4],
+            "timestamp": ride[5]
+
+        })
+
+    return history
+
+
+@app.post("/predict")
 def predict(request: FarePredictionRequest):
-    
-    # Run live prediction
-    result = predict_fare(
-        start_location=request.pickup,
-        end_location=request.drop,
-        city=request.city,
-        hour=request.hour
-    )
-    return result
+    try:
+        # Run live prediction
+        result = predict_fare(
+            start_location=request.pickup,
+            end_location=request.drop,
+            city=request.city,
+            hour=request.hour
+        )
+        return result
+    except Exception as e:
+        return {"error": str(e)}
 
 # Run FASTAPI Server
 
