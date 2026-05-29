@@ -1,4 +1,5 @@
 # 🚕 SurgeSense AI
+![Homepage](screenshots/homepage.png)
 ## An AI-powered intelligent cab fare prediction platform that uses machine learning, live weather data, route intelligence, and traffic estimation to generate realistic ride fare predictions in real time.
 
 ---
@@ -10,6 +11,17 @@
 
 #### Backend API
 [Render Deployment](https://surgesense-ai.onrender.com/)
+
+---
+
+### 📸 Screenshots
+#### Fare Prediction
+
+![Prediction](screenshots/prediction.png)
+
+#### Interactive Route Map & Ride History
+
+![Route Map](screenshots/route-map.png)
 
 ---
 
@@ -160,18 +172,18 @@ and start generating AI-powered fare predictions.
 
 ---
 
-## 🔮 Future Improvements
+### 🔮 Future Improvements
 
-- Demand forecasting using time-series models
+- Add an AI Fare Advisor that recommends the best time to book a ride, such as: "Wait 5 minutes, and your fare could drop by ₹40 based on current demand trends."
 - Real traffic API integration
 - Multi-city fare optimization
-- Driver availability modeling
+- Add advanced model evaluation dashboards with feature importance visualizations and prediction error analysis.
 - Deep Learning based fare prediction
 - Dynamic demand heatmaps
 
 ---
 
-## 👨‍💻 Author
+### 👨‍💻 Author
 Aditya Singh
 
 ---
