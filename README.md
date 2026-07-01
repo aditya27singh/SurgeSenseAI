@@ -20,7 +20,22 @@ SurgeSense AI is an intelligent fare prediction system that combines **gradient-
 
 ---
 
+<<<<<<< HEAD
 ## ✨ Key Features
+=======
+### 📸 Screenshots
+#### Fare Prediction
+
+![Prediction](screenshots/prediction.png)
+
+#### Interactive Route Map & Ride History
+
+![Route Map](screenshots/route-map.png)
+
+---
+
+### ✨ Features
+>>>>>>> 3007eebf56a88421af730f905942e7fd2be200eb
 
 | Category | Feature |
 |---|---|
@@ -36,6 +51,7 @@ SurgeSense AI is an intelligent fare prediction system that combines **gradient-
 
 ## 🏗️ Architecture
 
+<<<<<<< HEAD
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    React Frontend                        │
@@ -64,6 +80,32 @@ SurgeSense AI is an intelligent fare prediction system that combines **gradient-
 │  │  API     │         │  API    │                        │
 │  └──────────┘         └─────────┘                        │
 └──────────────────────────────────────────────────────────┘
+=======
+### APIs
+- OpenWeather API
+- OpenRouteService API
+
+---
+
+### 📂 Project Structure
+
+```text
+📦 SurgeSense-AI
+│
+├── 📂 backend                # FastAPI backend
+│
+├── 📂 frontend               # React + Vite frontend
+│
+├── 📂 data                    
+│
+├── 📂 notebooks
+│
+├── 📂 outputs
+│
+├── 📜 requirements.txt       # Python dependencies
+├── 📜 .gitignore
+└── 📜 README.md
+>>>>>>> 3007eebf56a88421af730f905942e7fd2be200eb
 ```
 
 ---
