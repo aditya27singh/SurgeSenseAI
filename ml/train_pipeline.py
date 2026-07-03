@@ -75,10 +75,6 @@ TARGET_COL = "price"
 def get_models() -> dict:
     models = {
         "Linear Regression": LinearRegression(),
-        "Ridge (a=1.0)": Ridge(alpha=1.0),
-        "Ridge (a=10.0)": Ridge(alpha=10.0),
-        "Lasso (a=0.1)": Lasso(alpha=0.1),
-        "Lasso (a=1.0)": Lasso(alpha=1.0),
         "Random Forest": RandomForestRegressor(n_estimators=200, max_depth=15, min_samples_split=5, random_state=42, n_jobs=-1),
         "XGBoost": xgb.XGBRegressor(n_estimators=300, max_depth=8, learning_rate=0.05, subsample=0.8, colsample_bytree=0.8, random_state=42, verbosity=0),
     }
@@ -208,10 +204,14 @@ def run_pipeline(data_path: str = None):
     results_df.to_csv(os.path.join(RESULTS_DIR, "model_evaluation_results.csv"), index=False)
     logger.info("Best model: %s (R2 = %.4f)", best_model_name, best_r2)
 
+    # Deploy XGBoost regardless of best model for consistency
+    deployment_model=models["XGBoost"]
+    deployment_model.fit(X_trainval, y_trainval)
+
     # Cross-validation
     logger.info("Running 5-fold CV...")
     cv_all = []
-    for name in [best_model_name, "Random Forest"]:
+    for name in ["XGBoost", "Random Forest"]:
         if name in models:
             cv_df = cross_validate_model(models[name], X_trainval, y_trainval)
             cv_df["Model"] = name
@@ -225,13 +225,13 @@ def run_pipeline(data_path: str = None):
     plot_learning_curves(models[best_model_name], X_trainval, y_trainval, best_model_name)
 
     # Feature importance
-    if hasattr(best_model, "feature_importances_"):
-        importance = pd.DataFrame({"Feature": FEATURE_COLS, "Importance": best_model.feature_importances_}).sort_values("Importance", ascending=False)
+    if hasattr(deployment_model, "feature_importances_"):
+        importance = pd.DataFrame({"Feature": FEATURE_COLS, "Importance": deployment_model.feature_importances_}).sort_values("Importance", ascending=False)
         importance.to_csv(os.path.join(RESULTS_DIR, "xgb_feature_importance.csv"), index=False)
         fig, ax = plt.subplots(figsize=(10, 8))
         ax.barh(importance["Feature"], importance["Importance"], color="#22d3ee")
         ax.set_xlabel("Importance")
-        ax.set_title(f"Feature Importance - {best_model_name}")
+        ax.set_title("Feature Importance - XGBoost")
         ax.invert_yaxis()
         ax.grid(True, alpha=0.3, axis="x")
         fig.savefig(os.path.join(PLOTS_DIR, "feature_importance.png"), dpi=150, bbox_inches="tight")
@@ -254,15 +254,16 @@ def run_pipeline(data_path: str = None):
     logger.info("Running ablation study...")
     run_ablation_study(X_train, y_train, X_test, y_test)
 
-    # Save best model
+    # Save deployment model
     model_path = os.path.join(MODELS_DIR, "xgboost_model.pkl")
-    joblib.dump(best_model, model_path)
-    logger.info("Saved best model to %s", model_path)
+    joblib.dump(deployment_model, model_path)
+    logger.info("Saved deployment model to %s", model_path)
 
     print("\n" + "=" * 60)
     print("TRAINING PIPELINE COMPLETE")
     print("=" * 60)
-    print(f"Best Model: {best_model_name}")
+    print(f"Best Benchmark Model: {best_model_name}")
+    print("Deployment Model: XGBoost")
     print(f"Test R2:    {best_r2:.4f}")
     print(f"Results:    {RESULTS_DIR}")
     print(f"Plots:      {PLOTS_DIR}")

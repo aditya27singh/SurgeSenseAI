@@ -1,2 +1,0 @@
-mean_fare,median_fare,std_fare,min_fare,max_fare,var_95,var_99,ci_lower_95,ci_upper_95,n_simulations
-44.32818330162498,40.0,13.187639450666625,40.0,220.9174786479777,40.0,40.0,40.0,90.68787867714093,10000

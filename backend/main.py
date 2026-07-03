@@ -1,4 +1,4 @@
-"""
+﻿"""
 SurgeSense AI â€” Backend API
 AI-powered dynamic pricing engine for ride-hailing services.
 """
@@ -502,9 +502,9 @@ def predict_fare(start_location: str, end_location: str, city: str, hour: int) -
         "peak_hour_surge": float(peak_hour_surge)
     }
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 # Prediction Endpoint
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 
 @app.post("/predict", response_model=FarePredictionResponse)
 def predict(request: FarePredictionRequest, db=Depends(get_db)):
@@ -543,9 +543,7 @@ def predict(request: FarePredictionRequest, db=Depends(get_db)):
 
     return result
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-# Ride History Endpoint
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 
 @app.get("/ride-history", response_model=list[RideHistoryItem])
 def ride_history(db=Depends(get_db)):
@@ -575,7 +573,7 @@ def ride_history(db=Depends(get_db)):
 
 # â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Run Server
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# â” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ” € â ”
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
