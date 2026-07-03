@@ -132,12 +132,13 @@ def plot_learning_curves(model, X, y, model_name: str):
 
 def run_ablation_study(X_train, y_train, X_test, y_test):
     feature_groups = {
-        "Time features": ["hour", "hour_sin", "hour_cos", "is_peak", "is_night"],
+        "Time features": ["hour", "hour_sin", "hour_cos", "is_peak", "is_night",
+                          "distance_peak", "traffic_peak", "weather_peak", "demand_score"],
         "Traffic features": ["traffic_encoded", "distance_traffic", "traffic_peak"],
         "Weather features": ["weather_encoded", "weather_peak"],
         "Interaction features": ["distance_traffic", "distance_peak", "traffic_peak", "weather_peak"],
         "Demand score": ["demand_score"],
-        "Distance only": ["distance"],
+        "Distance only": ["distance", "distance_traffic", "distance_peak"],
     }
     baseline_model = xgb.XGBRegressor(n_estimators=300, max_depth=8, learning_rate=0.05, verbosity=0)
     baseline_model.fit(X_train, y_train)
@@ -208,15 +209,14 @@ def run_pipeline(data_path: str = None):
     deployment_model=models["XGBoost"]
     deployment_model.fit(X_trainval, y_trainval)
 
-    # Cross-validation
+    # Cross-validation on ALL models
     logger.info("Running 5-fold CV...")
     cv_all = []
-    for name in ["XGBoost", "Random Forest"]:
-        if name in models:
-            cv_df = cross_validate_model(models[name], X_trainval, y_trainval)
-            cv_df["Model"] = name
-            cv_all.append(cv_df)
-            logger.info("  %s - CV R2: %.4f +/- %.4f", name, cv_df["R2"].mean(), cv_df["R2"].std())
+    for name, model in models.items():
+        cv_df = cross_validate_model(model, X_trainval, y_trainval)
+        cv_df["Model"] = name
+        cv_all.append(cv_df)
+        logger.info("  %s - CV R2: %.4f +/- %.4f", name, cv_df["R2"].mean(), cv_df["R2"].std())
     if cv_all:
         pd.concat(cv_all).to_csv(os.path.join(RESULTS_DIR, "cv_results.csv"), index=False)
 

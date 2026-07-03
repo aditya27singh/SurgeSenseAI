@@ -25,17 +25,20 @@ RESULTS_DIR = os.path.join(BASE_DIR, "outputs", "results")
 
 
 def fixed_pricing(distance, hour, traffic, weather):
-    return 40 + distance * 12
+    """Flat meter fare: $3 flag drop + $4.50/km (no surge)."""
+    return 3.0 + distance * 4.50
 
 def simple_surge_pricing(distance, hour, traffic, weather):
-    base = 40 + distance * 12
-    return base * {"low": 1.0, "medium": 1.3, "high": 1.6}.get(traffic, 1.0)
+    """Meter fare with a traffic-based surge multiplier."""
+    base = 3.0 + distance * 4.50
+    return base * {"low": 1.0, "medium": 1.15, "high": 1.30}.get(traffic, 1.0)
 
 def rule_based_dynamic(distance, hour, traffic, weather):
-    base = 40 + distance * 12
-    ts = {"low": 20, "medium": 50, "high": 90}.get(traffic, 20)
-    ws = {"clear": 0, "rain": 35, "snow": 60}.get(weather, 0)
-    ps = 70 if (7 <= hour <= 10 or 17 <= hour <= 21) else 0
+    """Meter fare + discrete surcharges for traffic, weather, and peak hours."""
+    base = 3.0 + distance * 4.50
+    ts = {"low": 0, "medium": 2.50, "high": 5.00}.get(traffic, 0)
+    ws = {"clear": 0, "rain": 1.50, "snow": 3.00}.get(weather, 0)
+    ps = 2.50 if (7 <= hour <= 10 or 17 <= hour <= 21) else 0
     return base + ts + ws + ps
 
 def ml_dynamic_pricing(distance, hour, traffic, weather, model):
