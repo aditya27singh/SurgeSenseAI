@@ -14,44 +14,38 @@
 
 ## 📋 Abstract
 
-SurgeSense AI is an intelligent fare prediction system that combines **gradient-boosted machine learning models** with **real-time traffic and weather data** to generate dynamic pricing for ride-hailing services. The system trains and benchmarks 6 regression models on the **NYC TLC Yellow Taxi dataset**, performs price elasticity analysis, revenue optimization, Monte Carlo risk simulation, and ARIMA demand forecasting — deployed as a full-stack web application.
+SurgeSense AI is an intelligent fare prediction system that combines **gradient-boosted machine learning models** with **traffic and weather data** to generate dynamic pricing for ride-hailing services. The system benchmarks 4 regression models on **50,000 trips from the NYC TLC Yellow Taxi dataset (January 2024)**, performs ablation studies, ARIMA demand forecasting, and strategy backtesting — deployed as a full-stack web application with FastAPI and React.
 
-> **🔬 Research Focus:** Dynamic Pricing × Machine Learning × Financial Engineering
+> **Best Model:** LightGBM — R² = 0.9142, MAPE = 12.24%, validated with 5-fold CV
 
 ---
 
-<<<<<<< HEAD
-## ✨ Key Features
-=======
 ### 📸 Screenshots
-#### Fare Prediction
 
+#### Fare Prediction
 ![Prediction](screenshots/prediction.png)
 
 #### Interactive Route Map & Ride History
-
 ![Route Map](screenshots/route-map.png)
 
 ---
 
-### ✨ Features
->>>>>>> 3007eebf56a88421af730f905942e7fd2be200eb
+## ✨ Key Features
 
-| Category | Feature |
+| Category | Details |
 |---|---|
-| **ML Pipeline** | 6 models benchmarked (Linear, Ridge, Lasso, RF, XGBoost, LightGBM) |
-| **Feature Engineering** | 16 features including cyclical encoding, interaction terms, demand scoring |
+| **ML Pipeline** | 4 models benchmarked (Linear Regression, Random Forest, XGBoost, LightGBM) |
+| **Feature Engineering** | 13 features including cyclical encoding, interaction terms, demand scoring |
 | **Real-Time Data** | Live weather (OpenWeather) + routing (OpenRouteService) |
-| **Finance Modules** | Price elasticity, revenue optimization, Monte Carlo VaR, ARIMA forecasting |
-| **Validation** | 5-fold CV, ablation study, learning curves, backtesting |
-| **Frontend** | React + Tailwind + Leaflet maps with dark mode UI |
-| **DevOps** | Docker, GitHub Actions CI/CD, automated tests |
+| **Validation** | 5-fold CV on all models, ablation study, learning curves, strategy backtesting |
+| **Demand Forecasting** | ARIMA(2,1,2) for 48-hour hourly demand prediction |
+| **Frontend** | React 18 + Vite + Leaflet maps with dark mode UI |
+| **DevOps** | Docker, GitHub Actions CI/CD, pytest test suite |
 
 ---
 
 ## 🏗️ Architecture
 
-<<<<<<< HEAD
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    React Frontend                        │
@@ -71,7 +65,7 @@ SurgeSense AI is an intelligent fare prediction system that combines **gradient-
 │       │                                                  │
 │  ┌────▼─────────────────────────────────────────────┐   │
 │  │              XGBoost ML Model                     │   │
-│  │  16 features → fare prediction → blend with       │   │
+│  │  13 features → fare prediction → blend with       │   │
 │  │  rule-based calculation (70% ML / 30% rules)      │   │
 │  └───────────────────────────────────────────────────┘   │
 │       │                    │                              │
@@ -80,88 +74,65 @@ SurgeSense AI is an intelligent fare prediction system that combines **gradient-
 │  │  API     │         │  API    │                        │
 │  └──────────┘         └─────────┘                        │
 └──────────────────────────────────────────────────────────┘
-=======
-### APIs
-- OpenWeather API
-- OpenRouteService API
-
----
-
-### 📂 Project Structure
-
-```text
-📦 SurgeSense-AI
-│
-├── 📂 backend                # FastAPI backend
-│
-├── 📂 frontend               # React + Vite frontend
-│
-├── 📂 data                    
-│
-├── 📂 notebooks
-│
-├── 📂 outputs
-│
-├── 📜 requirements.txt       # Python dependencies
-├── 📜 .gitignore
-└── 📜 README.md
->>>>>>> 3007eebf56a88421af730f905942e7fd2be200eb
 ```
 
 ---
 
 ## 🔬 Methodology
 
-### Feature Engineering (16 Features)
+### Dataset
+
+NYC TLC Yellow Taxi Trip Records (January 2024) — the industry standard benchmark for ride-hailing research. After cleaning and stratified sampling: **50,000 trips** with 5 raw fields (`distance`, `hour`, `weather`, `traffic`, `price`).
+
+> **Note:** Traffic levels are derived from average trip speed. Weather is randomly assigned with realistic NYC January probabilities (55% clear, 30% rain, 15% snow) since TLC data does not include weather fields.
+
+### Feature Engineering (13 Features)
 
 | Feature | Type | Rationale |
 |---|---|---|
-| `distance` | Continuous | Primary fare driver |
+| `distance` | Continuous | Primary fare driver (explains ~46% of variance alone) |
+| `hour` | Discrete | Raw temporal signal |
 | `hour_sin`, `hour_cos` | Cyclical | Preserves 23→0 hour proximity |
 | `is_peak`, `is_night` | Binary | Temporal demand indicators |
-| `traffic_encoded` | Ordinal | Speed-derived traffic level |
-| `weather_encoded` | Ordinal | Weather severity |
-| `distance_squared` | Polynomial | Non-linear distance effects |
-| `distance_log` | Transform | Diminishing marginal cost |
-| `distance_bucket` | Categorical | Discrete pricing tiers |
-| `distance_traffic` | Interaction | Surge × distance scaling |
-| `distance_peak` | Interaction | Peak × distance |
+| `traffic_encoded` | Ordinal | Speed-derived congestion level (1=low, 2=med, 3=high) |
+| `weather_encoded` | Ordinal | Weather severity (1=clear, 2=rain, 3=snow) |
+| `distance_traffic` | Interaction | Surge scales with distance |
+| `distance_peak` | Interaction | Peak effect × distance |
 | `traffic_peak` | Interaction | Compound surge |
 | `weather_peak` | Interaction | Weather-peak compound |
-| `demand_score` | Composite | Aggregate demand indicator |
+| `demand_score` | Composite | 2×peak + 1.5×weather + 1.2×traffic |
 
 ### Models Evaluated
 
-| Model | Key Parameters |
-|---|---|
-| Linear Regression | Baseline |
-| Ridge | α = 1.0, 10.0 |
-| Lasso | α = 0.1, 1.0 |
-| Random Forest | n=200, depth=15 |
-| **XGBoost** | n=300, depth=8, lr=0.05 |
-| LightGBM | n=300, depth=8, lr=0.05 |
+| Model | R² (Test) | R² (5-Fold CV) | MAE | MAPE |
+|---|---|---|---|---|
+| Linear Regression | 0.9002 | 0.8998 ± 0.0039 | $3.74 | 13.58% |
+| Random Forest | 0.9082 | 0.9031 ± 0.0064 | $3.56 | 12.93% |
+| XGBoost (deployed) | 0.8982 | 0.8966 ± 0.0077 | $3.50 | 12.36% |
+| **LightGBM (best)** | **0.9142** | **0.9077 ± 0.0064** | **$3.41** | **12.24%** |
 
----
+> **Deployment choice:** XGBoost is deployed in production for backend compatibility; LightGBM is the benchmark winner.
 
-## 💰 Finance Modules
+### Ablation Study
 
-### Price Elasticity of Demand
-Analyzes how demand changes with price across conditions (peak/off-peak, weather, traffic).
-
-### Revenue Optimization
-Finds the revenue-maximizing price using `scipy.optimize.minimize_scalar`:
-```
-R(P) = P × D₀ × (P/P_ref)^ε
-```
-
-### Monte Carlo Simulation
-10,000 random scenarios → fare distribution → VaR at 95% and 99% confidence.
-
-### ARIMA Demand Forecasting
-ARIMA(2,1,2) model for 48-hour demand prediction with confidence intervals.
+| Removed Feature Group | R² | R² Drop |
+|---|---|---|
+| All features (baseline) | 0.8958 | — |
+| Without Distance | 0.4391 | **−0.4566** |
+| Without Traffic features | 0.8860 | −0.0098 |
+| Without Interaction features | 0.8859 | −0.0099 |
+| Without Weather features | 0.8951 | −0.0006 |
 
 ### Strategy Backtesting
-Compares Fixed, Simple Surge, Rule-Based, and ML pricing on historical data.
+
+| Strategy | Avg Fare | MAE vs Actual |
+|---|---|---|
+| Fixed (meter fare) | $28.00 | $7.89 |
+| Simple Surge (traffic multiplier) | $32.97 | $8.08 |
+| Rule-Based Dynamic (surcharges) | $34.18 | $7.39 |
+| **ML Dynamic (XGBoost)** | **$28.05** | **$3.04** |
+
+ML pricing is **2.4× more accurate** than the best rule-based approach.
 
 ---
 
@@ -171,11 +142,11 @@ Compares Fixed, Simple Surge, Rule-Based, and ML pricing on historical data.
 |---|---|
 | **Backend** | Python 3.11, FastAPI, Pydantic |
 | **ML** | XGBoost, LightGBM, Scikit-learn, Statsmodels |
-| **Frontend** | React 18, Vite, Tailwind CSS, Leaflet, Framer Motion |
+| **Frontend** | React 18, Vite, Leaflet, CSS |
 | **Database** | SQLite |
 | **APIs** | OpenWeather, OpenRouteService |
 | **DevOps** | Docker, GitHub Actions |
-| **Testing** | pytest, flake8 |
+| **Testing** | pytest |
 
 ---
 
@@ -187,31 +158,31 @@ dynamic_pricing/
 │   └── main.py                 # FastAPI backend (API, features, prediction)
 ├── ml/
 │   ├── data_loader.py          # NYC TLC data download & processing
-│   ├── train_pipeline.py       # Multi-model training + evaluation
-│   ├── demand_elasticity.py    # Price elasticity analysis
-│   ├── revenue_optimizer.py    # Revenue optimization (scipy)
-│   ├── monte_carlo.py          # Monte Carlo simulation
-│   ├── time_series.py          # ARIMA demand forecasting
-│   └── backtester.py           # Strategy backtesting
+│   ├── train_pipeline.py       # Multi-model training + CV + ablation
+│   ├── pricing_strategy.py     # Backtesting framework (4 strategies)
+│   └── time_series.py          # ARIMA demand forecasting
 ├── frontend/
 │   └── src/
-│       ├── App.jsx             # Main app component
-│       └── components/         # 10 React components
+│       ├── App.jsx             # Main React app component
+│       ├── App.css             # Styling
+│       └── main.jsx            # Entry point
+├── notebooks/
+│   └── analysis.ipynb          # Full analysis notebook (9 sections)
 ├── tests/
 │   ├── test_features.py        # Feature engineering tests
 │   ├── test_api.py             # API endpoint tests
 │   └── test_model.py           # Model prediction tests
-├── data/                       # Training data
+├── data/                       # Training data (NYC TLC)
 ├── outputs/
-│   ├── saved_models/           # Trained model files
+│   ├── saved_models/           # Trained XGBoost model (.pkl)
 │   ├── results/                # CSV evaluation results
 │   └── plots/                  # Generated analysis plots
 ├── docs/
-│   ├── technical_report.md     # Academic-style paper
 │   └── API_REFERENCE.md        # API documentation
+├── screenshots/                # App screenshots
 ├── Dockerfile                  # Backend container
 ├── docker-compose.yml          # Full-stack deployment
-├── .github/workflows/ci.yml    # CI/CD pipeline
+├── .github/workflows/          # CI/CD pipeline
 ├── requirements.txt            # Python dependencies
 └── README.md
 ```
@@ -223,13 +194,11 @@ dynamic_pricing/
 ### Option 1: Docker (Recommended)
 
 ```bash
-# Clone and configure
 git clone https://github.com/yourusername/dynamic-pricing.git
 cd dynamic-pricing
 cp .env.example .env
 # Add your API keys to .env
 
-# Run everything
 docker-compose up --build
 ```
 
@@ -251,18 +220,17 @@ cd frontend && npm install && npm run dev
 ## 🤖 ML Pipeline Commands
 
 ```bash
-# Step 1: Download real NYC taxi data
+# Step 1: Download and process NYC taxi data
 python -m ml.data_loader
 
-# Step 2: Train all models + generate results
+# Step 2: Train all models + CV + ablation + learning curves
 python -m ml.train_pipeline
 
-# Step 3: Run finance analysis modules
-python -m ml.demand_elasticity
-python -m ml.revenue_optimizer
-python -m ml.monte_carlo
+# Step 3: Run ARIMA demand forecasting
 python -m ml.time_series
-python -m ml.backtester
+
+# Step 4: Backtest pricing strategies
+python -m ml.pricing_strategy
 ```
 
 ---
@@ -273,36 +241,21 @@ python -m ml.backtester
 # Run all tests
 pytest tests/ -v
 
-# Run specific test suites
+# Individual test suites
 pytest tests/test_features.py -v    # Feature engineering
 pytest tests/test_api.py -v         # API endpoints
 pytest tests/test_model.py -v       # Model predictions
-
-# Lint
-flake8 backend/ ml/ --max-line-length=120
 ```
 
 ---
 
-## 🔮 Research Extensions
+## 🔮 Future Work
 
 - [ ] Reinforcement learning for adaptive pricing
 - [ ] Graph Neural Networks for spatial demand modeling
 - [ ] Real-time traffic API integration (Google Maps, TomTom)
 - [ ] Multi-city transfer learning
-- [ ] A/B testing framework for pricing strategies
 - [ ] Fairness constraints in pricing optimization
-
----
-
-## 📚 Academic References
-
-1. Chen, M. K., & Sheldon, M. (2016). Dynamic pricing in a labor market: Surge pricing and flexible work on the Uber platform. *ACM EC*.
-2. Cachon, G. P., et al. (2017). The role of surge pricing on a service platform. *M&SOM*, 19(3).
-3. Talluri, K. T., & Van Ryzin, G. J. (2004). *The Theory and Practice of Revenue Management*. Springer.
-4. Ye, J., et al. (2018). How to build a graph-based deep learning architecture for ride demand prediction. *arXiv:1812.04858*.
-5. Box, G. E. P., & Jenkins, G. M. (1976). *Time Series Analysis*. Holden-Day.
-6. Moreira-Matias, L., et al. (2013). Predicting taxi-passenger demand using streaming data. *IEEE TITS*, 14(3).
 
 ---
 
